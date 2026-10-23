@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Subway Surfers: Metro Runner 3D</title>
+    <meta name="description" content="Experience an action-packed 3D Subway Surfers clone directly in your browser with 3-lane running, trains, ramps, hoverboards, jetpacks, and upgrades!">
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js 3D Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- 3D WebGL Canvas Container -->
+    <div id="game-container"></div>
+
+    <!-- Power-up Notification Toast -->
+    <div id="game-toast">POWER-UP!</div>
+
+    <!-- UI Overlay Layer -->
+    <div id="ui-root">
+        <!-- 1. START / MAIN MENU SCREEN -->
+        <section id="menu-screen" class="screen active">
+            <header class="menu-header">
+                <div class="bank-badge">
+                    <span class="coin-icon">🪙</span>
+                    <span class="bank-coins-text">0</span>
+                </div>
+                <button class="btn btn-secondary btn-icon" id="btn-toggle-audio" title="Toggle Sound">
+                    <span class="audio-icon">🔊</span>
+                </button>
+            </header>
+
+            <div class="menu-title-box">
+                <h1 class="game-logo">SUBWAY SURF</h1>
+                <div class="game-subtitle">METRO RUNNER 3D</div>
+                <div class="high-score-card">
+                    <span class="trophy-icon">🏆</span>
+                    <span>HIGH SCORE: <strong class="high-score-text">0</strong></span>
+                </div>
+            </div>
+
+            <div class="menu-center-action">
+                <button class="btn btn-primary btn-play-large" id="btn-play">
+                    <span>RUN!</span> <span>▶</span>
+                </button>
+                <div class="keyboard-guide">
+                    <span><span class="key-tag">←</span> <span class="key-tag">→</span> or <span class="key-tag">A</span> <span class="key-tag">D</span> Move</span>
+                    <span><span class="key-tag">↑</span> or <span class="key-tag">W</span> Jump</span>
+                    <span><span class="key-tag">↓</span> or <span class="key-tag">S</span> Roll</span>
+                    <span><span class="key-tag">SPACE (2x)</span> or <span class="key-tag">H</span> Hoverboard</span>
+                </div>
+            </div>
+
+            <footer class="menu-bottom-bar">
+                <button class="btn btn-accent" id="btn-shop">
+                    <span>🛒</span> <span>UPGRADES</span>
+                </button>
+                <button class="btn btn-secondary" id="btn-characters">
+                    <span>🧢</span> <span>CHARACTERS</span>
+                </button>
+            </footer>
+        </section>
+
+        <!-- 2. IN-GAME HUD SCREEN -->
+        <section id="hud-screen" class="screen">
+            <div class="hud-top">
+                <div class="hud-left">
+                    <div class="score-panel">
+                        <div class="score-label">SCORE</div>
+                        <div class="score-val" id="hud-score">0</div>
+                        <div class="score-label" style="margin-top: 4px; font-size: 0.75rem;">BEST: <span id="hud-high-score">0</span></div>
+                        <div class="multiplier-tag" id="hud-multiplier">x1</div>
+                    </div>
+                    <!-- Dynamic Powerup Progress Bars -->
+                    <div id="powerup-bars"></div>
+                </div>
+
+                <div class="hud-right">
+                    <div class="coins-badge">
+                        <span class="coin-icon">🪙</span>
+                        <span id="hud-coins">0</span>
+                    </div>
+                    <button class="btn btn-secondary btn-icon" id="btn-pause" title="Pause Game">
+                        <span>⏸</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="hud-bottom">
+                <!-- Hoverboard Button -->
+                <div class="hoverboard-btn-card" id="btn-hud-hoverboard" title="Double tap or click to activate hoverboard">
+                    <span class="hb-icon">🛹</span>
+                    <div class="hb-info">
+                        <span class="hb-title">HOVERBOARD</span>
+                        <span class="hb-stock">x<span id="hoverboard-count">3</span> (Double Tap)</span>
+                    </div>
+                </div>
+
+                <!-- On-Screen Touch Controls (Mobile / Clickable) -->
+                <div class="touch-controls">
+                    <button class="touch-btn" id="touch-left" title="Move Left">◀</button>
+                    <button class="touch-btn" id="touch-jump" title="Jump">▲</button>
+                    <button class="touch-btn" id="touch-roll" title="Roll">▼</button>
+                    <button class="touch-btn" id="touch-right" title="Move Right">▶</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. PAUSE MODAL -->
+        <div id="pause-screen" class="modal-overlay">
+            <div class="pause-box">
+                <h2 class="pause-title">GAME PAUSED</h2>
+                <button class="btn btn-primary" id="btn-resume">RESUME</button>
+                <button class="btn btn-accent" id="btn-pause-restart">RESTART</button>
+                <button class="btn btn-secondary" id="btn-pause-menu">MAIN MENU</button>
+            </div>
+        </div>
+
+        <!-- 4. GAME OVER SCREEN -->
+        <section id="game-over-screen" class="screen">
+            <div class="game-over-box">
+                <h2 class="game-over-title">BUSTED!</h2>
+                <p class="game-over-subtitle">The Inspector caught you on the tracks!</p>
+                <div id="go-record-banner">🎉 NEW HIGH SCORE! 🎉</div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-lbl">FINAL SCORE</div>
+                        <div class="stat-val" id="go-final-score">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-lbl">BEST RECORD</div>
+                        <div class="stat-val" id="go-best-score">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-lbl">COINS EARNED</div>
+                        <div class="stat-val gold" id="go-run-coins">+0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-lbl">DISTANCE</div>
+                        <div class="stat-val" id="go-run-distance">0 m</div>
+                    </div>
+                </div>
+
+                <div class="game-over-actions">
+                    <button class="btn btn-primary" id="btn-restart">RUN AGAIN</button>
+                    <button class="btn btn-accent" id="btn-gameover-shop">UPGRADE</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. UPGRADES & SHOP MODAL -->
+        <div id="shop-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="bank-badge">
+                        <span class="coin-icon">🪙</span>
+                        <span class="bank-coins-text">0</span>
+                    </div>
+                    <h2 class="modal-title">UPGRADE SHOP</h2>
+                    <button class="btn btn-secondary btn-icon" id="btn-close-shop">✕</button>
+                </div>
+                <div class="modal-body" id="shop-items-container">
+                    <!-- Populated dynamically by UI.js -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. CHARACTER SELECTOR MODAL -->
+        <div id="characters-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="bank-badge">
+                        <span class="coin-icon">🪙</span>
+                        <span class="bank-coins-text">0</span>
+                    </div>
+                    <h2 class="modal-title">RUNNER CREW</h2>
+                    <button class="btn btn-secondary btn-icon" id="btn-close-characters">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="character-grid" id="characters-list">
+                        <!-- Populated dynamically by UI.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Scripts -->
+    <script src="js/audio.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+
+    <!-- Initialization Bootstrap -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const game = new SubwayRunnerGame();
+            game.init();
+            window.GameUI.init(game);
+        });
+    </script>
+</body>
+</html>
